@@ -87,7 +87,7 @@ def file_processor(directory="DEV"):
     # Return the list of data from json files
     return data_list
 
-''' Deploy if we are supposed to process only unique tokens in a url
+#Deploy if we are supposed to process only unique tokens in a url
 def indexify(data_list):
     total = dict()
     for dat in data_list:
@@ -97,20 +97,8 @@ def indexify(data_list):
                 total[token] = [dat['url']]
             else:
                 total[token].append(dat['url'])
-    return total
-'''     
+    return total   
 
-''' Deploy if we are supposed to process all instances of tokens in a url
-def indexify(data_list):
-    total = dict()
-    for dat in data_list:
-        for token in dat['stemmed_content'].split():
-            if token not in total.keys():
-                total[token] = [dat['url']]
-            else:
-                total[token].append(dat['url'])
-    return total
-'''            
 
 if __name__ == "__main__":
     processed_data = file_processor()
