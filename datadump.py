@@ -48,6 +48,3 @@ def push_to_disk(sorted_dict):
             with open(file_path, 'w') as json_file:
                 json.dump(subsection, json_file, indent = 1)
 
-
-x = alpha_sort(x)
-push_to_disk(x)
