@@ -5,20 +5,26 @@ from bs4 import BeautifulSoup
 import nltk
 from nltk.stem import PorterStemmer
 
-
+#this is the function to process the html files 
+#as of right now it grabs the important text BUT DOESNT DO ANYTHING WITH it
+#for now its just returning all the text not including the important ones)
+#later we might use the important ones for something
 def process_html(content):
     soup = BeautifulSoup(content, 'html.parser')
 
-    # essentially have an array of important text to extract like bold or headers
-    important_text = []
+    #find and flag important text
+    important_words = set()
     for tag in soup.find_all(['b', 'strong', 'h1', 'h2', 'h3', 'title']):
-        important_text.append(tag.get_text())
+        important_words.update(tag.get_text().split())
 
-    #combine important text with the overall text
-    combined_text = ' '.join(important_text) + ' ' + soup.get_text()
+    #then just grab all the text (including important ones)
+    all_text = soup.get_text()
 
-    return combined_text
+    #return tuple of all text and a set of important words
+    return all_text, important_words
 
+
+#Stems and tokenize the text 
 def stem_text(text):
     #init a stemmer
     stemmer = PorterStemmer()
@@ -51,8 +57,10 @@ def file_processor(directory="DEV"):
                     data = ujson.load(json_file)
 
                     if 'content' in data and data['content'].startswith('<'):
-                        text = process_html(data['content'])
-                        stemmed_text = stem_text(text)
+                        all_text, _ = process_html(data['content'])
+
+                        # Apply stemming to all_text
+                        stemmed_text = stem_text(all_text)
 
                         # Tokenize and update counts
                         tokens = nltk.word_tokenize(stemmed_text)
