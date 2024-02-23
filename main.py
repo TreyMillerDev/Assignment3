@@ -87,6 +87,18 @@ def file_processor(directory="DEV"):
     # Return the list of data from json files
     return data_list
 
+def indexify(data_list):
+    masterDictionary = dict()
+    for dat in data_list:
+        for token in dat['stemmed_content'].split():
+            if token not in masterDictionary.keys():
+                masterDictionary[token] = []
+                masterDictionary[token].append(masterDictionary['url'])
+            else:
+                masterDictionary[token].append(masterDictionary['url'])
+    return masterDictionary
+            
+
 if __name__ == "__main__":
     processed_data = file_processor()
     # Now processed_data contains the url and stemmed content of each HTML file.
