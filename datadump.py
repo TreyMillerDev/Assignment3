@@ -1,5 +1,6 @@
 import json
 
+
 def alpha_sort(random_dict):
     alpha_sorted_dict = {}
     starting_letter = 'a'
@@ -40,10 +41,10 @@ def push_to_disk(sorted_dict):
                 json.dump(data, json_file, indent = 2)
 
         except (FileNotFoundError, json.JSONDecodeError):
-            print(f"Creating a new JSON file at '{file_path}'.")
             with open(file_path, 'w') as json_file:
                 json.dump(subsection, json_file, indent = 1)
-            print("New JSON file created.")
 
     sorted_dict = {} # empty container
 
+x = alpha_sort(random_dict)
+push_to_disk(x)
