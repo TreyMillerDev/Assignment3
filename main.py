@@ -87,6 +87,19 @@ def file_processor(directory="DEV"):
     # Return the list of data from json files
     return data_list
 
+#Deploy if we are supposed to process only unique tokens in a url
+def indexify(data_list):
+    total = dict()
+    for dat in data_list:
+        unique_tokens = list(set(dat['stemmed_content'].split()))
+        for token in unique_tokens:
+            if token not in total.keys():
+                total[token] = [dat['url']]
+            else:
+                total[token].append(dat['url'])
+    return total   
+
+
 if __name__ == "__main__":
     processed_data = file_processor()
     # Now processed_data contains the url and stemmed content of each HTML file.
