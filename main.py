@@ -1,6 +1,7 @@
 import os
 import ujson
 import time
+from datadump import alpha_sort, push_to_disk
 from bs4 import BeautifulSoup
 import nltk
 from nltk.stem import PorterStemmer
@@ -23,14 +24,33 @@ def process_html(content):
     #return tuple of all text and a set of important words
     return all_text, important_words
 
+def tokenize(text: str) -> list:
+    tokenList = []  # Initialize the list of tokens
+    word = ""  # Init a placeholder string
+    for cha in text:  # For each character in the text
+        # If it is an uppercase letter, make the character lowercase
+        if 65 <= ord(cha) <= 90:
+            cha = chr(ord(cha) + 32)
+            word += cha
+        # If it is a lowercase letter or number
+        elif (97 <= ord(cha) <= 122):
+            word += cha
+        else:  # If it is a divider
+            if word != "":  # If the word is not an empty string
+                tokenList.append(word)  # Add the word to the token list
+                word = ""  # Reset the word
+    # Add the last word if not empty (for cases when text does not end with a divider)
+    if word != "":
+        tokenList.append(word)
+    
+    return tokenList
 
-#Stems and tokenize the text 
 def stem_text(text):
-    #init a stemmer
+    # Initialize a stemmer
     stemmer = PorterStemmer()
 
-    #tokenize and stem
-    tokens = nltk.word_tokenize(text)
+    # Tokenize using the custom tokenize function instead of NLTK
+    tokens = tokenize(text)
     stemmed_tokens = [stemmer.stem(token) for token in tokens]
 
     return ' '.join(stemmed_tokens)
@@ -51,7 +71,7 @@ def file_processor(directory="DEV"):
     for root, dirs, files in os.walk(directory):
         # Loop through json files in folder
         for file in files:
-            if num < 1000 and file.endswith(".json"):
+            if num < 10000 and file.endswith(".json"):
                 file_path = os.path.join(root, file)
                 with open(file_path, 'r') as json_file:
                     data = ujson.load(json_file)
@@ -89,6 +109,7 @@ def file_processor(directory="DEV"):
 
 #Deploy if we are supposed to process only unique tokens in a url
 def indexify(data_list):
+    start = time.time()
     total = dict()
     for dat in data_list:
         unique_tokens = list(set(dat['stemmed_content'].split()))
@@ -97,14 +118,38 @@ def indexify(data_list):
                 total[token] = [dat['url']]
             else:
                 total[token].append(dat['url'])
+        if len(total) > 500:
+            total_sorted = alpha_sort(total)
+            push_to_disk(total_sorted)
+            total.clear()
+            total_sorted.clear()
+    end = time.time()
+    processing_time = (end - start) 
+    print(f"Processing Time: {processing_time}s")
     return total   
+
+def clear_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                # If you also want to remove subdirectories, uncomment the next line
+                # shutil.rmtree(file_path)
+                pass
+        except Exception as e:
+            print(f'Failed to delete {file_path}. Reason: {e}')
 
 
 if __name__ == "__main__":
+    clear_directory(f'alphaJSON/')
     processed_data = file_processor()
+    indexify(processed_data)
     # Now processed_data contains the url and stemmed content of each HTML file.
 
     # Example to display processed data
     #for data in processed_data[:3]:  # Display first 3 entries
      #   print(f"URL: {data.get('url')}")
      #   print(f"Stemmed Content: {data.get('stemmed_content')[:100]}...")  # Display first 100 characters
+
