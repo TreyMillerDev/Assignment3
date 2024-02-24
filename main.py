@@ -23,6 +23,10 @@ def process_html(content):
     #return tuple of all text and a set of important words
     return all_text, important_words
 
+def is_valid_html(content):
+    # Simple check to see if content looks like HTML
+    content = content.strip().lower()
+    return content.startswith('<!doctype html>') or content.startswith('<html>')
 
 #Stems and tokenize the text 
 def stem_text(text):
@@ -38,15 +42,16 @@ def stem_text(text):
 def file_processor(directory="DEV"):
     # Initialize list to store data from json file
     data_list = []
+    dup_list = set()
     num = 0
-    # Calculate the time taken to process all json files in the DEV folder
-    start = time.time()
-
     #create variables to track the number of files the tokens and the unique tokens
     num_files = 0
     total_tokens = 0
     unique_tokens = set()
-    
+
+    # Calculate the time taken to process all json files in the DEV folder
+    start = time.time()
+
     # Loop through folders in DEV folder
     for root, dirs, files in os.walk(directory):
         # Loop through json files in folder
@@ -56,7 +61,16 @@ def file_processor(directory="DEV"):
                 with open(file_path, 'r') as json_file:
                     data = ujson.load(json_file)
 
-                    if 'content' in data and data['content'].startswith('<'):
+                    #Check if URL is unique
+                    url = data.get('url', '').strip()
+                    
+                    if url in dup_list:
+                        continue
+                    
+                    #Keep the list of unique url
+                    dup_list.add(url)
+
+                    if 'content' in data and is_valid_html(data['content']):
                         all_text, _ = process_html(data['content'])
 
                         # Apply stemming to all_text
