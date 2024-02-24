@@ -1,6 +1,7 @@
 import os
 import ujson
 import time
+from datadump import alpha_sort, push_to_disk
 from bs4 import BeautifulSoup
 import nltk
 from nltk.stem import PorterStemmer
@@ -102,6 +103,7 @@ def indexify(data_list):
 
 if __name__ == "__main__":
     processed_data = file_processor()
+    indexify(data_list)
     # Now processed_data contains the url and stemmed content of each HTML file.
 
     # Example to display processed data
