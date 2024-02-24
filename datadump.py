@@ -19,10 +19,15 @@ def alpha_sort(random_dict):
 
 
 def push_to_disk(sorted_dict):
+
+    invalid_key_names = { ":" : "colon", "/": "backslash", "\\": "forwardslash", "." : "period" }
     # print(sorted_dict)
     while (len(sorted_dict) != 0):
         key, val = sorted_dict.popitem() # pop the first dict in our sorted_dict 
         try:
+            if key in invalid_key_names:
+                key = invalid_key_names[key]
+
             file_path = f'alphaJSON/{key}.json'
             subsection = dict(sorted(val.items())) # we take our subsection dict and sort that small sub
             # inorder = [sorted(sorted_dict[key])] # store and sort the dict that contains just the letter 
@@ -34,7 +39,7 @@ def push_to_disk(sorted_dict):
             # our letter dict is also sorted 
             combined_dict = {}
             for key in sorted(set(subsection.keys()).union(data.keys())):
-                if key in subsection and data: # both dicts share a key 
+                if key in subsection and key in data: # both dicts share a key 
                     combined_dict[key] = sorted(subsection[key] + data[key]) # take both lists and combine them
                 elif key in subsection: # the key is in one or the other but not both 
                     combined_dict[key] = sorted(subsection[key])
