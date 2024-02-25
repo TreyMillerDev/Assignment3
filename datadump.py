@@ -1,4 +1,5 @@
 import json
+import threading
 
 def alpha_sort(random_dict):
     alpha_sorted_dict = {}
@@ -18,12 +19,19 @@ def alpha_sort(random_dict):
     return alpha_sorted_dict # return the newly sorted containr 
 
 
-def push_to_disk(sorted_dict):
-    # print(sorted_dict)
+def push_to_disk(sorted_dict, lock):
+
+    invalid_key_names = { ":" : "colon", "/": "backslash", "\\": "forwardslash", "." : "period" }
+    
+    lock.acquire() # lock the json modiciations 
     while (len(sorted_dict) != 0):
         key, val = sorted_dict.popitem() # pop the first dict in our sorted_dict 
         try:
+            if key in invalid_key_names:
+                key = invalid_key_names[key]
+            
             file_path = f'alphaJSON/{key}.json'
+            
             subsection = dict(sorted(val.items())) # we take our subsection dict and sort that small sub
             # inorder = [sorted(sorted_dict[key])] # store and sort the dict that contains just the letter 
             with open(file_path, 'r') as json_file:
@@ -34,12 +42,12 @@ def push_to_disk(sorted_dict):
             # our letter dict is also sorted 
             combined_dict = {}
             for key in sorted(set(subsection.keys()).union(data.keys())):
-                if key in subsection and data: # both dicts share a key 
-                    combined_dict[key] = sorted(subsection[key] + data[key]) # take both lists and combine them
+                if key in subsection and key in data: # both dicts share a key 
+                    combined_dict[key] = sorted(set(subsection[key] + data[key])) # take both lists and combine them
                 elif key in subsection: # the key is in one or the other but not both 
-                    combined_dict[key] = sorted(subsection[key])
+                    combined_dict[key] = sorted(set(subsection[key]))
                 else:
-                    combined_dict[key] = sorted(data[key])
+                    combined_dict[key] = sorted(set(data[key]))
 
             with open(file_path, 'w') as json_file:
                 json.dump(combined_dict, json_file, indent = 1) # update the new json file 
@@ -47,4 +55,5 @@ def push_to_disk(sorted_dict):
         except (FileNotFoundError, json.JSONDecodeError):
             with open(file_path, 'w') as json_file:
                 json.dump(subsection, json_file, indent = 1)
-
+        
+    lock.release() # release the lock on the json modificaitons
