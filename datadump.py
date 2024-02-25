@@ -19,11 +19,12 @@ def alpha_sort(random_dict):
     return alpha_sorted_dict # return the newly sorted containr 
 
 
-def push_to_disk(sorted_dict, lock):
+def push_to_disk(id, sorted_dict, lock):
 
     invalid_key_names = { ":" : "colon", "/": "backslash", "\\": "forwardslash", "." : "period" }
     
     lock.acquire() # lock the json modiciations 
+    print(f"worker {id}, has locked and is modifying json file")
     while (len(sorted_dict) != 0):
         key, val = sorted_dict.popitem() # pop the first dict in our sorted_dict 
         try:
@@ -57,3 +58,4 @@ def push_to_disk(sorted_dict, lock):
                 json.dump(subsection, json_file, indent = 1)
         
     lock.release() # release the lock on the json modificaitons
+    print(f"worker {id} has finisehd modifying json file ")

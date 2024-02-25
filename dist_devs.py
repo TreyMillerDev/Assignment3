@@ -4,6 +4,24 @@ from worker import Worker
 import threading
 from main import clear_directory
 
+class Count:
+
+    def __init__(self):
+        self.num_files = 0
+        self.total_tokens = 0
+        self.unq_url = set()
+        self.lock = threading.Lock()
+
+    def inc_files(self, total_tokens, url):
+        with self.lock:
+            self.num_files += 1
+            self.total_tokens += total_tokens
+            self.unq_url.add(url)
+    
+    def get_files(self):
+        return self.num_files
+
+
 class Create_workers:
 
     def __init__(self, main_dev = 'DEV/'):
@@ -12,9 +30,7 @@ class Create_workers:
         self.workers = list([])
         self.lock = threading.Lock()
         # uniques, total_tokens, num_files
-        self.uniques = set()
-        self.total_tokens = 0
-        self.num_files = 0
+        self.counter = Count()
 
 
     def create_workers(self):
@@ -25,10 +41,10 @@ class Create_workers:
         for x in range(4):
             if x == 3:
                 subdir_section = self.items[x*dist_factor: len(self.items)]
-                self.workers.append(Worker(x,subdir_section, self.lock, self.uniques, self.total_tokens, self.num_files))
+                self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
             else:
                 subdir_section = self.items[x * dist_factor: (x+1)* dist_factor]
-                self.workers.append(Worker(x,subdir_section, self.lock, self.uniques, self.total_tokens, self.num_files))
+                self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
 
         for worker in self.workers:
             worker.start()
