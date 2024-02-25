@@ -5,6 +5,24 @@ import threading
 from main import clear_directory
 import time
 
+def create_paritions(thread_count, directory_path = 'DEV'):
+    subs = []
+    # print(sorted(file_in_dir))
+    for x in range(thread_count):
+        subs.append([])
+    x = 0
+    for root, dirs, files in os.walk(directory_path):
+            # Loop through json files in folder
+            for file in files:
+                if file.endswith(".json"):
+                    file_path = os.path.join(root, file)
+                    subs[x].append(file_path)
+                    x += 1
+
+                    if x == thread_count:
+                        x = 0
+    return subs
+
 class Count:
 
     def __init__(self):
@@ -38,15 +56,18 @@ class Create_workers:
         self.lock = threading.Lock()
         # uniques, total_tokens, num_files
         self.counter = count
+        self.thread_count = 4
 
 
     def create_workers(self):
         """ Breaks the list if sub directories into sections that each crawler will handle , 
             size of sub = 22 sub directory folders """
 
-        dist_factor = math.floor(len(self.items) / 8)
-        for x in range(8):
-            if x == 7:
+        # dist_factor = math.floor(len(self.items) / self.thread_count)
+        subs = create_paritions(8) # split our data set into smaller parts 
+        
+        for x in range(self.thread_count):
+            if x == self.thread_count - 1:
                 subdir_section = self.items[x*dist_factor: len(self.items)]
                 self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
             else:
@@ -68,6 +89,7 @@ def main():
     start = time.time()
     count = Count()
     clear_directory(f'alphaJSON/')
+    clear_directory(f'alphaLOCK/')
     working = Create_workers(count)
     working.start()
     end = time.time()

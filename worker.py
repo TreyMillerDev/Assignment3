@@ -59,11 +59,12 @@ class Worker(Thread):
                                 self.total[token] = [data['url']]
                             else:
                                 self.total[token].append(data['url'])
-                            if len(self.total) > 4000:
-                                print(f'worker no {self.id} full cleared, moving onto next set: ', acc_file,self.counter.get_files())
+                            if len(self.total) > 2000:
                                 self.total = alpha_sort(self.total)
                                 push_to_disk(self.id, self.total,self.lock)
                                 self.total.clear()
+                                print(f'worker no {self.id} full cleared, moving onto next set: ', acc_file,self.counter.get_files())
+
         if (len(self.total) != 0):
             self.total = alpha_sort(self.total)
             push_to_disk(self.id, self.total,self.lock)
