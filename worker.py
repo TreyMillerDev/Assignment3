@@ -42,8 +42,8 @@ class Worker(Thread):
             file_path = os.path.join(self.main_dir, subdir)
             for file in os.listdir(file_path): # this access all the files in the sub directory
                 acc_file = os.path.join(file_path,file)
-                if (self.counter.get_files() > 10000):
-                    break
+                # if (self.counter.get_files() > 10000):
+                #     break
                 with open(acc_file, 'r') as json_file:
                     data = ujson.load(json_file)
 
@@ -53,24 +53,19 @@ class Worker(Thread):
 
                         # Apply stemming to all_text
                         stemmed_text = stem_text(all_text)
-
-                        # keep track and increment
-                        # self.local_files += 1 
-                        # self.local_token_count += len(stemmed_text)
                         self.counter.inc_files(len(stemmed_text), data['url'])
                         for token in stemmed_text:
                             if token not in self.total.keys():
                                 self.total[token] = [data['url']]
                             else:
                                 self.total[token].append(data['url'])
-                            if len(self.total) > 2000:
-                                # print(f'worker no {self.id} full cleared, moving onto next set: ', acc_file,)
-                                print(self.counter.get_files())
+                            if len(self.total) > 4000:
+                                print(f'worker no {self.id} full cleared, moving onto next set: ', acc_file,self.counter.get_files())
                                 self.total = alpha_sort(self.total)
                                 push_to_disk(self.id, self.total,self.lock)
                                 self.total.clear()
-
-                        # data_list.append({'url': data['url'], 'stemmed_content': "".join(stemmed_text)})
-                        
-
+        if (len(self.total) != 0):
+            self.total = alpha_sort(self.total)
+            push_to_disk(self.id, self.total,self.lock)
+            self.total.clear()
         print(f"worker no {self.id} has finished, putting to sleep, good night :)")

@@ -154,16 +154,3 @@ def file_processor(directory="DEV"):
     print(f"Average document length: {avg_doc_length} tokens")
     print(f"Processing time: {processing_time:.03f}ms")
 
-    # Return the list of data from json files
-
-
-
-# if __name__ == "__main__":
-#     clear_directory(f'alphaJSON/')
-#     processed_data = file_processor()
-    # Now processed_data contains the url and stemmed content of each HTML file.
-
-    # Example to display processed data
-    #for data in processed_data[:3]:  # Display first 3 entries
-     #   print(f"URL: {data.get('url')}")
-     #   print(f"Stemmed Content: {data.get('stemmed_content')[:100]}...")  # Display first 100 characters

@@ -3,6 +3,7 @@ import math
 from worker import Worker
 import threading
 from main import clear_directory
+import time
 
 class Count:
 
@@ -21,25 +22,31 @@ class Count:
     def get_files(self):
         return self.num_files
 
+    def get_tokens(self):
+        return self.total_tokens
+
+    def get_urls(self):
+        return len(self.unq_url)
+
 
 class Create_workers:
 
-    def __init__(self, main_dev = 'DEV/'):
+    def __init__(self,count, main_dev = 'DEV/'):
         
         self.items = os.listdir(main_dev) # gets a list of all the sub-directories 
         self.workers = list([])
         self.lock = threading.Lock()
         # uniques, total_tokens, num_files
-        self.counter = Count()
+        self.counter = count
 
 
     def create_workers(self):
         """ Breaks the list if sub directories into sections that each crawler will handle , 
             size of sub = 22 sub directory folders """
 
-        dist_factor = math.floor(len(self.items) / 4)
-        for x in range(4):
-            if x == 3:
+        dist_factor = math.floor(len(self.items) / 8)
+        for x in range(8):
+            if x == 7:
                 subdir_section = self.items[x*dist_factor: len(self.items)]
                 self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
             else:
@@ -57,9 +64,21 @@ class Create_workers:
         for worker in self.workers:
             worker.join()
 
-
+def main():
+    start = time.time()
+    count = Count()
+    clear_directory(f'alphaJSON/')
+    working = Create_workers(count)
+    working.start()
+    end = time.time()
+    processing_time = (end - start) * 1000
+    avg_doc_length = count.get_tokens() / count.get_files() if count.get_files() > 0 else 0
+    print(f"Processed {count.get_files()} files")
+    print(f"Total tokens: {count.get_tokens()}")
+    print(f"Unique tokens: {count.get_urls()}")
+    print(f"Average document length: {avg_doc_length} tokens")
+    print(f"Processing time: {processing_time:.03f}ms")
 
 if __name__== "__main__":
-    clear_directory(f'alphaJSON/')
-    working = Create_workers()
-    working.start()
+    main()
+    
