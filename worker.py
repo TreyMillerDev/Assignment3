@@ -79,7 +79,7 @@ class Worker(Thread):
                             else:
                                 self.total[stemmed_text[token]].append(((self.freq_dict[stemmed_text[token]] / len(stemmed_text)) ,curr_doc_id, token+1)) # add that url to that token
                         
-                        if len(self.total) > 4000:
+                        if len(self.total) > 5000:
                             self.total = alpha_sort(self.total)
                             push_to_disk(self.id, self.total,self.lock)
                             self.total.clear()
