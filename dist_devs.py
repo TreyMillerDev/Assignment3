@@ -5,23 +5,23 @@ import threading
 from main import clear_directory
 import time
 
-def create_paritions(thread_count, directory_path = 'DEV'):
-    subs = []
-    # print(sorted(file_in_dir))
-    for x in range(thread_count):
-        subs.append([])
-    x = 0
-    for root, dirs, files in os.walk(directory_path):
-            # Loop through json files in folder
-            for file in files:
-                if file.endswith(".json"):
-                    file_path = os.path.join(root, file)
-                    subs[x].append(file_path)
-                    x += 1
+# def create_paritions(thread_count, directory_path = 'DEV'):
+#     subs = []
+#     # print(sorted(file_in_dir))
+#     for x in range(thread_count):
+#         subs.append([])
+#     x = 0
+#     for root, dirs, files in os.walk(directory_path):
+#             # Loop through json files in folder
+#             for file in files:
+#                 if file.endswith(".json"):
+#                     file_path = os.path.join(root, file)
+#                     subs[x].append(file_path)
+#                     x += 1
 
-                    if x == thread_count:
-                        x = 0
-    return subs
+#                     if x == thread_count:
+#                         x = 0
+#     return subs
 
 class Count:
 
@@ -53,26 +53,31 @@ class Create_workers:
         
         self.items = os.listdir(main_dev) # gets a list of all the sub-directories 
         self.workers = list([])
+        self.thread_count = 8
+        # self.subs = create_paritions(self.thread_count)
+        print("finished partitions")
+
         self.lock = threading.Lock()
         # uniques, total_tokens, num_files
         self.counter = count
-        self.thread_count = 4
-
+        
 
     def create_workers(self):
         """ Breaks the list if sub directories into sections that each crawler will handle , 
             size of sub = 22 sub directory folders """
 
-        # dist_factor = math.floor(len(self.items) / self.thread_count)
-        subs = create_paritions(8) # split our data set into smaller parts 
-        
+        dist_factor = math.floor(len(self.items) / self.thread_count)
+         # split our data set into smaller parts 
         for x in range(self.thread_count):
+            # self.workers.append(Worker(x,self.subs[x], self.lock, self.counter))
             if x == self.thread_count - 1:
                 subdir_section = self.items[x*dist_factor: len(self.items)]
                 self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
             else:
                 subdir_section = self.items[x * dist_factor: (x+1)* dist_factor]
                 self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
+
+        # self.subs = [] # empty that so we don't hold the urls no more 
 
         for worker in self.workers:
             worker.start()
@@ -89,7 +94,8 @@ def main():
     start = time.time()
     count = Count()
     clear_directory(f'alphaJSON/')
-    clear_directory(f'alphaLOCK/')
+    if os.path.exists("DocID.pkl"):
+        os.remove("DocID.pkl")
     working = Create_workers(count)
     working.start()
     end = time.time()
