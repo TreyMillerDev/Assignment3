@@ -3,7 +3,7 @@ import json
 
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
  
-def sort_JSONS_into_pickle():
+def sort_JSONS_into_pickle(): #sort pkl files MUST CREATE A DIRECTORY : sortedJSON
     for letter in alphabet:
         replacement_dict = dict()
 
@@ -25,9 +25,32 @@ def sort_JSONS_into_pickle():
             with open(f"sortedJSON/{letter}.pkl", 'wb') as fj:
                 pickle.dump(replacement_dict,fj)
 
-def visualize_into_jsons():
+def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
     for letter in alphabet:
         with open(f"sortedJSON/{letter}.pkl", 'rb') as fp:
             data = pickle.load(fp) # the dictionary kinda of nightmare 
             with open(f"visuals/{letter}.json", 'w') as fj:
-                json.dump(replacement_dict,fj)
+                json.dump(data,fj, indent= 1)
+
+
+
+def find_file(url, directory): # given url and directory find thtat speicifc json folder with that url 
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".json"):
+                file_path = os.path.join(root, file)
+                with open(file_path, 'r') as json_file:
+                    data = ujson.load(json_file)
+                    if (data['url'] == url):
+                        print(file)
+
+def retrieve_word(word):
+    letter = word[0] # gets the first letter 
+    with open(f"sortedJSON/{letter}.pkl", 'rb') as fp:
+            data = pickle.load(fp) # the dictionary kinda of nightmare 
+    if word in data.keys():
+        return data[word] # assume word is in the data file 
+
+if __name__ == "__main__":
+    # sort_JSONS_into_pickle()
+    print('end')
