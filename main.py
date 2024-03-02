@@ -4,6 +4,7 @@ import time
 from bs4 import BeautifulSoup
 import nltk
 from nltk.stem import PorterStemmer
+from spellchecker import SpellChecker
 
 #this is the function to process the html files 
 #as of right now it grabs the important text BUT DOESNT DO ANYTHING WITH it
@@ -56,7 +57,7 @@ def file_processor(directory="DEV"):
     for root, dirs, files in os.walk(directory):
         # Loop through json files in folder
         for file in files:
-            if num < 1000 and file.endswith(".json"):
+            if num < 10 and file.endswith(".json"):
                 file_path = os.path.join(root, file)
                 with open(file_path, 'r') as json_file:
                     data = ujson.load(json_file)
@@ -113,10 +114,52 @@ def indexify(data_list):
                 total[token].append(dat['url'])
     return total   
 
+def validate_query(query):
+    # spelling check initialization
+    spell = SpellChecker()
+    # tokenize user input
+    query_tokens = nltk.word_tokenize(query)
+    
+    refined_tokens = []
+
+    for token in query_tokens:
+        # Handle acronyms (fully upper case tokens)
+        if token.isupper():
+            refined_tokens.append(token.lower())
+            continue
+        # check for capitalized tokens
+        # lowercasing capitalized tokens might not be desirable in all cases especially for proper nouns
+        if token[0].isupper():
+            refined_tokens.append(token.lower())
+            continue
+        else:
+            # spelling correction 
+            corrected = spell.correction(token)
+            
+            # now lemmatize term using WordNet
+            # this works for for some inputs that are miss typed but it also affects correct input so this requires more work
+            #synonyms = wordnet.synsets(corrected)
+            #if synonyms:
+            #    # get the most general word
+            #    lemma_names = synonyms[0].lemma_names()
+            #    if lemma_names:
+            #        corrected = lemma_names[0]  # Taking the first synonym as the corrected term
+
+            refined_tokens.append(corrected)
+            
+    return refined_tokens
 
 if __name__ == "__main__":
     processed_data = file_processor()
     # Now processed_data contains the url and stemmed content of each HTML file.
+    index = indexify(processed_data)
+
+    while True:
+        user_query = input("Enter your search query (or type exit to quit): ").strip()
+        if user_query.lower() == "exit":
+            break
+        valid_token = validate_query(user_query)
+        print(f"Valid token: {valid_token}")
 
     # Example to display processed data
     #for data in processed_data[:3]:  # Display first 3 entries
