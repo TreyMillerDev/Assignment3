@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 import pickle
 import threading
 import os
-=======
-import json
->>>>>>> main
 
 def alpha_sort(random_dict):
     alpha_sorted_dict = {}
@@ -23,7 +19,6 @@ def alpha_sort(random_dict):
     random_dict = {} # empty our old container 
     return alpha_sorted_dict # return the newly sorted containr 
 
-<<<<<<< HEAD
 def push_to_disk(id, sorted_dict, lock):
 
     invalid_key_names = { ":" : "colon", "/": "backslash", "\\": "forwardslash", "." : "period" }
@@ -47,28 +42,6 @@ def push_to_disk(id, sorted_dict, lock):
 
                 # data dict is already sorted
                 # our letter dict is also sorted 
-=======
-
-def push_to_disk(sorted_dict):
-
-    invalid_key_names = { ":" : "colon", "/": "backslash", "\\": "forwardslash", "." : "period" }
-    # print(sorted_dict)
-    while (len(sorted_dict) != 0):
-        key, val = sorted_dict.popitem() # pop the first dict in our sorted_dict 
-        try:
-            if key in invalid_key_names:
-                key = invalid_key_names[key]
-
-            file_path = f'alphaJSON/{key}.json'
-            subsection = dict(sorted(val.items())) # we take our subsection dict and sort that small sub
-            # inorder = [sorted(sorted_dict[key])] # store and sort the dict that contains just the letter 
-            with open(file_path, 'r') as json_file:
-                data = json.load(json_file) # retrieve the file info
-
-
-            # data dict is already sorted
-            # our letter dict is also sorted 
->>>>>>> main
             combined_dict = {}
             for key in sorted(set(subsection.keys()).union(data.keys())):
                 if key in subsection and key in data: # both dicts share a key 
@@ -78,7 +51,6 @@ def push_to_disk(sorted_dict):
                 else:
                     combined_dict[key] = sorted(set(data[key]))
 
-<<<<<<< HEAD
             with open(file_path, 'wb') as json_file:
                 pickle.dump(combined_dict, json_file) # update the new json file 
 
@@ -106,11 +78,3 @@ def save_docID(docID, lock):
     lock.release() 
 
 
-=======
-            with open(file_path, 'w') as json_file:
-                json.dump(combined_dict, json_file, indent = 1) # update the new json file 
-
-        except (FileNotFoundError, json.JSONDecodeError):
-            with open(file_path, 'w') as json_file:
-                json.dump(subsection, json_file, indent = 1)
->>>>>>> main
