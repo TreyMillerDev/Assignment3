@@ -16,7 +16,6 @@ from nltk.stem import PorterStemmer
 #for now its just returning all the text not including the important ones)
 #later we might use the important ones for something
 
-
 def find_the_best_docs(tokens_dict):
 
     #tokens dict is
@@ -190,3 +189,65 @@ def file_processor(directory="DEV"):
     print(f"Average document length: {avg_doc_length} tokens")
     print(f"Processing time: {processing_time:.03f}ms")
 
+def validate_query(query):
+    # spelling check initialization
+    # spell = SpellChecker()
+    # tokenize user input
+    query_tokens = nltk.word_tokenize(query)
+    
+    refined_tokens = []
+
+    for token in query_tokens:
+        # Handle acronyms (fully upper case tokens)
+        if token.isupper():
+            refined_tokens.append(token.lower())
+            continue
+        # check for capitalized tokens
+        # lowercasing capitalized tokens might not be desirable in all cases especially for proper nouns
+        if token[0].isupper():
+            refined_tokens.append(token.lower())
+            continue
+        else:
+            # spelling correction 
+            # corrected = spell.correction(token)
+            refined_tokens.append(token)
+            # now lemmatize term using WordNet
+            # this works for for some inputs that are miss typed but it also affects correct input so this requires more work
+            #synonyms = wordnet.synsets(corrected)
+            #if synonyms:
+            #    # get the most general word
+            #    lemma_names = synonyms[0].lemma_names()
+            #    if lemma_names:
+            #        corrected = lemma_names[0]  # Taking the first synonym as the corrected term
+
+            # refined_tokens.append(refined_tokens)
+            
+    return refined_tokens
+
+if __name__ == "__main__":
+    while True:
+            
+            user_query = input("Enter your search query (or type exit to quit): ").strip()
+            if user_query.lower() == "exit":
+                break
+            # start = time.time()
+            valid_token = validate_query(user_query)
+# iftekhar ahmed
+            print(f"Valid token: {valid_token}")
+            empty_dict = dict()
+            stemmer = PorterStemmer()
+            for token in valid_token:
+                stem_token = stemmer.stem(token)
+                dicts_word = retrieve_word(stem_token)
+                if dicts_word != None:
+                    empty_dict[stem_token] = retrieve_word(stem_token)
+                    # print(len(dicts_word))
+            
+            for docID in find_the_best_docs(empty_dict)[0:5]:
+                print(get_url(docID))
+
+            # end = time.time()
+            # print((end - start))
+                    # print(get_url(docID))
+                    # for id in list(dicts_word.keys())[0:5]:
+                    #     print(get_url(id))
