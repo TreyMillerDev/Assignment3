@@ -1,7 +1,7 @@
 from threading import Thread
 import ujson
 from datadump import alpha_sort, push_to_disk, save_docID
-from main import stem_text, process_html
+from helper_funcs import stem_text, process_html
 import os
 import json
 
@@ -26,7 +26,11 @@ class Worker(Thread):
         self.DocID = dict() # dict to keep track of urls and their IDs
 
 
-    def get_freq(self, stemmed_text):
+    def get_freq(self, stemmed_text) -> None:
+        """counts the number of times the word appears in this list 
+
+            Modifies an inclass dictionary 
+        """
         for word in stemmed_text:
             if word not in self.freq_dict:
                 self.freq_dict[word] = 1 # word doesn't exist, minus one 
@@ -37,40 +41,45 @@ class Worker(Thread):
     def run(self):
         """ We run the file and parsing and stuff
             
-            class wide variables:
+            class wide variables: (data that is shared amoung workers )
                 set of unique urls
                 count of total tokens
                 number files
                 
-            private class variables:
-                reverse index dictionary"""
+            private class variables: (data that is personal to each worker )
+                reverse index dictionary
+                freq dictionary 
+        """
 
-        # print(self.list_of_directories)
-        for dir in self.list_of_directories: # this access all the files in the sub directory
+        # This is KO's and Trey's code for handling url, content stemming / retreival 
+        for dir in self.list_of_directories:
+            # this access all the files in the sub directory
             dir_path = os.path.join(self.main_dir,dir)
-            
             for file in os.listdir(dir_path):
                 acc_file = os.path.join(dir_path,file)
-                # os.path.join(dir_path,file)
                
-                with open(acc_file, 'r') as json_file:
+                with open(acc_file, 'r') as json_file: # open and read the json content 
                     data = ujson.load(json_file)
                     
                     if 'content' in data and data['content'].startswith('<'):
-                         # there is stuff we can check
+                        # The content inside the json file is valid html type 
                         all_text, _ = process_html(data['content'])
                         # Apply stemming to all_text
                         stemmed_text = stem_text(all_text)
                         self.get_freq(stemmed_text) # count the freq of words 
 
-                        self.counter.inc_files(len(stemmed_text), data['url'])
-                        curr_doc_id = self.counter.get_files()
+                        self.counter.inc_files(len(stemmed_text), data['url']) # incriment based on info of json
+
+                        curr_doc_id = self.counter.get_files() # returns the most current docID for parsing
+
                         self.DocID[curr_doc_id] = data['url'] # add that docID to ur own personal dict 
 
+                        # this is my creating DocID dicitonary 
                         if len(self.DocID) > 3000:
                             save_docID(self.DocID, self.lock)
                             self.DocID.clear()
 
+                        # This is Nick's indexify 
                         for token in range(len(stemmed_text)):
                             if stemmed_text[token] not in self.total.keys():
                                 self.total[stemmed_text[token]] = [((self.freq_dict[stemmed_text[token]] / len(stemmed_text)) ,curr_doc_id, token+1)] 
@@ -79,7 +88,8 @@ class Worker(Thread):
                             else:
                                 self.total[stemmed_text[token]].append(((self.freq_dict[stemmed_text[token]] / len(stemmed_text)) ,curr_doc_id, token+1)) # add that url to that token
                         
-                        if len(self.total) > 5000:
+                        # if dictionary is larger than 8000 items push to disk 
+                        if len(self.total) > 8000:
                             self.total = alpha_sort(self.total)
                             push_to_disk(self.id, self.total,self.lock)
                             self.total.clear()
@@ -87,6 +97,8 @@ class Worker(Thread):
 
                         self.freq_dict.clear() # empty our dict for new set of words 
 
+
+        # when worker has no more files just empty out the dictionaries 
         if len(self.DocID) != 0: # not empty 
             save_docID(self.DocID, self.lock)
             self.DocID.clear()

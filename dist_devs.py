@@ -2,19 +2,20 @@ import os
 import math
 from worker import Worker
 import threading
-from main import clear_directory
+from helper_funcs import clear_directory, sort_JSONS_into_pickle, visualize_into_jsons
 import time
 
-def create_paritions(thread_count, directory_path = 'DEV/'):
+def create_paritions(thread_count, directory_path = 'DEV/')-> list:
+    """ Goes into the DEV folder and distributes each sub folder into different lists
+    
+    Returns a nested list with thread_count number of sublists 
+    [ [some subfolders ], [some subfolders], [some subfolders], [some subfolders]]
+    """
     subs = []
-    # print(sorted(file_in_dir))
     for x in range(thread_count):
         subs.append([])
-    x = 0
+    x = 0   
     for dirs in os.listdir(directory_path):
-            # Loop through json files in folder
-            # if file.endswith(".json"):
-            # file_path = os.path.join(directory_path, dirs)
             subs[x].append(dirs)
             x += 1
 
@@ -23,18 +24,18 @@ def create_paritions(thread_count, directory_path = 'DEV/'):
     return subs
 
 class Count:
-
+    """ Use to keep consistency in the counting of docs/files when threading. 
+    Mainly to avoid overlapping or improper access to variables """
     def __init__(self):
-        self.num_files = 0
-        self.total_tokens = 0
-        self.unq_url = set()
-        self.lock = threading.Lock()
+        self.num_files = 0 # total number of files 
+        self.total_tokens = 0 # total number of tokens 
+        self.lock = threading.Lock() # a thread lock to prevent bad access
 
     def inc_files(self, total_tokens, url):
+        """ This is where values are updated by the workers, only 1 worker can access these variables at a time"""
         with self.lock:
             self.num_files += 1
             self.total_tokens += total_tokens
-            self.unq_url.add(url)
     
     def get_files(self):
         return self.num_files
@@ -42,8 +43,6 @@ class Count:
     def get_tokens(self):
         return self.total_tokens
 
-    def get_urls(self):
-        return len(self.unq_url)
 
 
 class Create_workers:
@@ -62,22 +61,11 @@ class Create_workers:
         
 
     def create_workers(self):
-        """ Breaks the list if sub directories into sections that each crawler will handle , 
-            size of sub = 22 sub directory folders """
-
-        # dist_factor = math.floor(len(self.items) / self.thread_count)
-         # split our data set into smaller parts 
+        """ Breaks the list if sub directories into sections that each crawler will handle"""
         for x in range(self.thread_count):
             self.workers.append(Worker(x,self.subs[x], self.lock, self.counter))
-            # if x == self.thread_count - 1:
-            #     subdir_section = self.items[x*dist_factor: len(self.items)]
-            #     self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
-            # else:
-            #     subdir_section = self.items[x * dist_factor: (x+1)* dist_factor]
-            #     self.workers.append(Worker(x,subdir_section, self.lock, self.counter))
 
-        # self.subs = [] # empty that so we don't hold the urls no more 
-
+        # This starts the threading 
         for worker in self.workers:
             worker.start()
 
@@ -95,17 +83,25 @@ def main():
     clear_directory(f'alphaJSON/')
     if os.path.exists("DocID.pkl"):
         os.remove("DocID.pkl")
+
     working = Create_workers(count)
     working.start()
+
+    # avg_doc_length = count.get_tokens() / count.get_files() if count.get_files() > 0 else 0
+    # print(f"Processed {count.get_files()} files")
+    # print(f"Total tokens: {count.get_tokens()}")
+    # # print(f"Unique tokens: {count.get_urls()}")
+    # print(f"Average document length: {avg_doc_length} tokens")
+    sort_JSONS_into_pickle()
+
     end = time.time()
     processing_time = (end - start) * 1000
-    avg_doc_length = count.get_tokens() / count.get_files() if count.get_files() > 0 else 0
-    print(f"Processed {count.get_files()} files")
-    print(f"Total tokens: {count.get_tokens()}")
-    print(f"Unique tokens: {count.get_urls()}")
-    print(f"Average document length: {avg_doc_length} tokens")
     print(f"Processing time: {processing_time:.03f}ms")
 
 if __name__== "__main__":
     main()
+    # clear_directory("visuals/")
+    # visualize_into_jsons()
+    # sort_JSONS_into_pickle()
+
     
