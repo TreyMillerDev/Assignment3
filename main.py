@@ -97,12 +97,14 @@ if __name__ == "__main__":
                 if dicts_word != None:
                     empty_dict[stem_token] = retrieve_word(stem_token)
                     # print(len(dicts_word))
-            print(empty_dict)
+            for key, item in empty_dict.items():
+                for tup in empty_dict[key]:
+                    print(tup)
             # for docID in find_the_best_docs(empty_dict):
             #     print(get_url(docID))
 
             # end = time.time()
             # print((end - start))
-                    # print(get_url(docID))
-                    # for id in list(dicts_word.keys())[0:5]:
-                    #     print(get_url(id))
+            #         print(get_url(docID))
+            #         for id in list(dicts_word.keys())[0:5]:
+            #             print(get_url(id))

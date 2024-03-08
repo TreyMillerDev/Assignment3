@@ -82,11 +82,11 @@ class Worker(Thread):
                         # This is Nick's indexify 
                         for token in range(len(stemmed_text)):
                             if stemmed_text[token] not in self.total.keys():
-                                self.total[stemmed_text[token]] = [((self.freq_dict[stemmed_text[token]] / len(stemmed_text)) ,curr_doc_id, token+1)] 
+                                self.total[stemmed_text[token]] = [(curr_doc_id, token+1)] 
                                 # we pass in a tuple, (int, int, int)
                                 # (tf-tdf score, docID , position of that word )
                             else:
-                                self.total[stemmed_text[token]].append(((self.freq_dict[stemmed_text[token]] / len(stemmed_text)) ,curr_doc_id, token+1)) # add that url to that token
+                                self.total[stemmed_text[token]].append((curr_doc_id, token+1)) # add that url to that token
                         
                         # if dictionary is larger than 8000 items push to disk 
                         if len(self.total) > 8000:

@@ -53,22 +53,21 @@ def sort_JSONS_into_pickle(): #sort pkl files into more managable lists
                 list_tups = data[token] # lsit_tups is a list of tuples related to that token 
                 new_list_tups = []
                 replacement_dict = dict()
-             # list_tups = [(.00124, 3, 15),(.00124, 3, 16),(.00124, 3, 17) ]
+             # list_tups = [(3, 15),( 3, 16),(3, 17) ]
                 for item in list_tups:
-                    if item[1] not in replacement_dict:
-                        replacement_dict[item[1]] = (item[0], [item[2]])
+                    if item[0] not in replacement_dict:
+                        replacement_dict[item[0]] = set([item[1]])
                     else:
-                        replacement_dict[item[1]][1].append(item[2])
+                        replacement_dict[item[0]].add(item[1])
 
                 # take the items in replace_dict and place them as a combined tuple inside of the new_list_tuple 
                 # replacement_dict = { docID: (freq, [position position2]) }
-                for key, item in replacement_dict.items():
-                    new_list_tups.append((key,item[0],item[1]))
-
+                for key in sorted(replacement_dict.keys()):
+                    new_list_tups.append( (key, sorted(replacement_dict[key]))  )
                 new_data[token] = new_list_tups
                 
 
-            with open(f"alphaJSON/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
+            with open(f"sortedJSON/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
                 pickle.dump(new_data,fj)
 
 def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
@@ -97,7 +96,7 @@ def find_file(url, directory): # given url and directory find thtat speicifc jso
 
 def retrieve_word(word):
     letter = word[0] # gets the first letter 
-    with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
+    with open(f"sortedJSON/{letter}.pkl", 'rb') as fp:
             data = pickle.load(fp) # the dictionary kinda of nightmare 
     if word in data.keys():
         return data[word] # assume word is in the data file 
@@ -173,4 +172,3 @@ def clear_directory(directory):
                 pass
         except Exception as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
-

@@ -99,9 +99,9 @@ def main():
     print(f"Processing time: {processing_time:.03f}ms")
 
 if __name__== "__main__":
-    main()
+    # main()
+    sort_JSONS_into_pickle()
     # clear_directory("visuals/")
     # visualize_into_jsons()
-    # sort_JSONS_into_pickle()
 
     
