@@ -3,6 +3,7 @@ import json
 import ujson
 import os
 import math
+# from main import clear_directory
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
 def find_the_best_docs(tokens_dict):
@@ -39,34 +40,37 @@ def find_the_best_docs(tokens_dict):
 
     return returnable
 
-def sort_JSONS_into_pickle(): #sort pkl files MUST CREATE A DIRECTORY : sortedJSON
+def sort_JSONS_into_pickle(): #sort pkl files into more managable lists 
     for letter in alphabet:
         replacement_dict = dict()
 
         with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
-            data = pickle.load(fp) # the dictionary kinda of nightmare 
-            # print(data)
-            for token, list_tups in data.items(): # seperate the key from the value 
-                replacement_dict[token] = dict()
+            data = pickle.load(fp) # that speicifc letter.json file 
 
-            #     # token = word 
-            #     # list_tups = [(.00124, 3, 15),(.00124, 3, 15),(.00124, 3, 15) ]
-            # for item in list_tups:
+            # token : [ (freq, docID, position), (freq, docID, position2)] will become underneath
+            # token : [ (docID, freq, [position, position2])]
+            new_data = dict()
+            for token in data.keys(): # seperate the key from the value 
+                list_tups = data[token] # lsit_tups is a list of tuples related to that token 
+                new_list_tups = []
+                replacement_dict = dict()
+             # list_tups = [(.00124, 3, 15),(.00124, 3, 16),(.00124, 3, 17) ]
                 for item in list_tups:
-                    if item[1] not in replacement_dict[token]:
-                        replacement_dict[token][item[1]] = (item[0], [item[2]])
+                    if item[1] not in replacement_dict:
+                        replacement_dict[item[1]] = (item[0], [item[2]])
                     else:
-                        replacement_dict[token][item[1]][1].append(item[2])
+                        replacement_dict[item[1]][1].append(item[2])
 
-            for key in replacement_dict.keys():
-                changed = replacement_dict[key] # gives us a dictionary 
-                for key in changed.keys():
-                    tuple_of_changed = changed[key]
-                    changed[key] = (tuple_of_changed[0] * (math.log(40389/ len(changed))), tuple_of_changed[1])
+                # take the items in replace_dict and place them as a combined tuple inside of the new_list_tuple 
+                # replacement_dict = { docID: (freq, [position position2]) }
+                for key, item in replacement_dict.items():
+                    new_list_tups.append((key,item[0],item[1]))
 
-                # sorts the dictionary inside replacement dictionary 
+                new_data[token] = new_list_tups
+                
+
             with open(f"sortedJSON/{letter}.pkl", 'wb') as fj:
-                pickle.dump(replacement_dict,fj)
+                pickle.dump(new_data,fj)
 
 def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
     for letter in alphabet:
@@ -98,9 +102,27 @@ def retrieve_word(word):
     if word in data.keys():
         return data[word] # assume word is in the data file 
 
+def clear_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                # If you also want to remove subdirectories, uncomment the next line
+                # shutil.rmtree(file_path)
+                pass
+        except Exception as e:
+            print(f'Failed to delete {file_path}. Reason: {e}')
+
+
 if __name__ == "__main__":
-    # sort_JSONS_into_pickle()
-    print(retrieve_word("machi"))
+    clear_directory(f'sortedJSON/')
+    clear_directory(f'visuals/')
+    sort_JSONS_into_pickle()
+    visualize_into_jsons()
+
+    # print(retrieve_word("machi"))
     # {22728: (0.0020408163265306124, [104]), 3674: (0.0040650406504065045, [73]), 3842: (0.0040650406504065045, [73])}
     # print(get_url(22728))
     # print(get_url(3674))

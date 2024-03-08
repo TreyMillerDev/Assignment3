@@ -17,10 +17,8 @@ from nltk.stem import PorterStemmer
 #later we might use the important ones for something
 
 def find_the_best_docs(tokens_dict):
-
     #tokens dict is
     #{term : { docid : (termfreq , [pos] ) } }
-
     returnable = []
     
     if len(tokens_dict.keys()) == 1: # sort by frequency if there is just one token
@@ -224,27 +222,26 @@ def validate_query(query):
             
     return refined_tokens
 
-if __name__ == "__main__":
-    while True:
-            
-            user_query = input("Enter your search query (or type exit to quit): ").strip()
-            if user_query.lower() == "exit":
-                break
-            # start = time.time()
-            valid_token = validate_query(user_query)
-# iftekhar ahmed
-            print(f"Valid token: {valid_token}")
-            empty_dict = dict()
-            stemmer = PorterStemmer()
-            for token in valid_token:
-                stem_token = stemmer.stem(token)
-                dicts_word = retrieve_word(stem_token)
-                if dicts_word != None:
-                    empty_dict[stem_token] = retrieve_word(stem_token)
-                    # print(len(dicts_word))
-            
-            for docID in find_the_best_docs(empty_dict)[0:5]:
-                print(get_url(docID))
+# if __name__ == "__main__":
+#     while True:
+#             user_query = input("Enter your search query (or type exit to quit): ").strip()
+#             if user_query.lower() == "exit":
+#                 break
+#             # start = time.time()
+#             valid_token = validate_query(user_query)
+# # iftekhar ahmed
+#             print(f"Valid token: {valid_token}")
+#             empty_dict = dict()
+#             stemmer = PorterStemmer()
+#             for token in valid_token:
+#                 stem_token = stemmer.stem(token)
+#                 dicts_word = retrieve_word(stem_token)
+#                 if dicts_word != None:
+#                     empty_dict[stem_token] = retrieve_word(stem_token)
+#                     # print(len(dicts_word))
+#             print(empty_dict)
+            # for docID in find_the_best_docs(empty_dict):
+            #     print(get_url(docID))
 
             # end = time.time()
             # print((end - start))

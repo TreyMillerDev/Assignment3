@@ -99,4 +99,3 @@ class Worker(Thread):
             self.total.clear()
         print(f"worker no {self.id} has finished, putting to sleep, good night :)")
 
-#DEV/i-sensorium_ics_uci_edu/3e0c766607091d03548116d270df672dbe0f63a3d8191b5b158402f2448f72ea.json
