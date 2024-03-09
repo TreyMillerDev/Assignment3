@@ -56,9 +56,9 @@ def sort_JSONS_into_pickle(): #sort pkl files into more managable lists
              # list_tups = [(3, 15),( 3, 16),(3, 17) ]
                 for item in list_tups:
                     if item[0] not in replacement_dict:
-                        replacement_dict[item[0]] = set([item[1]])
+                        replacement_dict[item[0]] = [item[1]]
                     else:
-                        replacement_dict[item[0]].add(item[1])
+                        replacement_dict[item[0]].append(item[1])
 
                 # take the items in replace_dict and place them as a combined tuple inside of the new_list_tuple 
                 # replacement_dict = { docID: (freq, [position position2]) }
