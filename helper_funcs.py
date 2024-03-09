@@ -11,6 +11,9 @@ import nltk
 from nltk.stem import PorterStemmer
 # from main import clear_directory
 
+
+
+# EVERYTHING UNDER HERE IS FOR INFO RETRIEVAL FROM REVERSE INDEX AND DATA SORTING RESULTING QUEIRES 
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
 def find_the_best_docs(tokens_dict):
@@ -43,7 +46,7 @@ def sort_JSONS_into_pickle(): #sort pkl files into more managable lists
     for letter in alphabet:
         replacement_dict = dict()
 
-        with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
+        with open(f"Inverted_index/{letter}.pkl", 'rb') as fp:
             data = pickle.load(fp) # that speicifc letter.json file 
 
             # token : [ (freq, docID, position), (freq, docID, position2)] will become underneath
@@ -67,15 +70,15 @@ def sort_JSONS_into_pickle(): #sort pkl files into more managable lists
                 new_data[token] = new_list_tups
                 
 
-            with open(f"sortedJSON/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
+            with open(f"Inverted_index/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
                 pickle.dump(new_data,fj)
 
-def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
-    for letter in alphabet:
-        with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
-            data = pickle.load(fp) # the dictionary kinda of nightmare 
-            with open(f"visuals/{letter}.json", 'w') as fj:
-                json.dump(data,fj, indent= 1)
+# def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
+#     for letter in alphabet:
+#         with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
+#             data = pickle.load(fp) # the dictionary kinda of nightmare 
+#             with open(f"visuals/{letter}.json", 'w') as fj:
+#                 json.dump(data,fj, indent= 1)
 
 def get_url(docID):
     with open(f"DocID.pkl", 'rb') as fp:
@@ -94,9 +97,25 @@ def find_file(url, directory): # given url and directory find thtat speicifc jso
                         return
     return
 
+def checkSum_Hash(words_only):
+    sums = set()
+
+    for word in range(len(words_only)):
+        if (word + 4) < len(words_only): # 0-4, 1-5, 2-6, making sure its in the range 
+            checksum = 0 # sum the the 4-word-sub
+            N_GRAM = ''.join(words_only[word:word+4])
+            for i in N_GRAM: # iterate through words adding the ASCII values of the char 
+                for let in i:
+                    checksum += ord(let)
+
+            sums.add(checksum)
+            checksum = 0
+
+    return tuple(set([num for num in sums if num % 15 == 0]))
+
 def retrieve_word(word):
     letter = word[0] # gets the first letter 
-    with open(f"sortedJSON/{letter}.pkl", 'rb') as fp:
+    with open(f"Inverted_index/{letter}.pkl", 'rb') as fp:
             data = pickle.load(fp) # the dictionary kinda of nightmare 
     if word in data.keys():
         return data[word] # assume word is in the data file 
@@ -114,6 +133,7 @@ def clear_directory(directory):
         except Exception as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
 
+# EVERYTHING UNDER HERE IS FOR FILE READING AND JSON CONTENT RETREIVAL FROM DEV FOLDERS 
 
 def process_html(content):
     soup = BeautifulSoup(content, 'html.parser')

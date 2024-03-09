@@ -2,7 +2,7 @@ import os
 import math
 from worker import Worker
 import threading
-from helper_funcs import clear_directory, sort_JSONS_into_pickle, visualize_into_jsons
+from helper_funcs import clear_directory, sort_JSONS_into_pickle
 import time
 
 def create_paritions(thread_count, directory_path = 'DEV/')-> list:
@@ -30,18 +30,26 @@ class Count:
         self.num_files = 0 # total number of files 
         self.total_tokens = 0 # total number of tokens 
         self.lock = threading.Lock() # a thread lock to prevent bad access
+        self.checksums = set()
 
-    def inc_files(self, total_tokens, url):
+    def inc_files(self, total_tokens, url,checksum):
         """ This is where values are updated by the workers, only 1 worker can access these variables at a time"""
         with self.lock:
             self.num_files += 1
             self.total_tokens += total_tokens
+            self.checksums.add(checksum)
     
     def get_files(self):
         return self.num_files
 
     def get_tokens(self):
         return self.total_tokens
+
+    def in_checksum(self, checksum):
+        if checksum in self.checksums:
+            return True
+        else:
+            return False
 
 
 
@@ -77,31 +85,24 @@ class Create_workers:
         for worker in self.workers:
             worker.join()
 
-def main():
+def create_inverted_index():
     start = time.time()
     count = Count()
-    clear_directory(f'alphaJSON/')
+    # clear_directory(f'alphaJSON/')
     if os.path.exists("DocID.pkl"):
         os.remove("DocID.pkl")
-
+    try:
+        os.mkdir("Inverted_index")
+    except OSError as e:
+        print(f"Failed to create folder. Error: {e}")
     working = Create_workers(count)
     working.start()
-
-    # avg_doc_length = count.get_tokens() / count.get_files() if count.get_files() > 0 else 0
-    # print(f"Processed {count.get_files()} files")
-    # print(f"Total tokens: {count.get_tokens()}")
-    # # print(f"Unique tokens: {count.get_urls()}")
-    # print(f"Average document length: {avg_doc_length} tokens")
-    sort_JSONS_into_pickle()
 
     end = time.time()
     processing_time = (end - start) * 1000
     print(f"Processing time: {processing_time:.03f}ms")
 
-if __name__== "__main__":
-    # main()
-    sort_JSONS_into_pickle()
-    # clear_directory("visuals/")
-    # visualize_into_jsons()
+
+create_inverted_index()
 
     

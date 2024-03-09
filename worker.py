@@ -1,7 +1,7 @@
 from threading import Thread
 import ujson
 from datadump import alpha_sort, push_to_disk, save_docID
-from helper_funcs import stem_text, process_html
+from helper_funcs import stem_text, process_html, checkSum_Hash
 import os
 import json
 
@@ -65,37 +65,39 @@ class Worker(Thread):
                         # The content inside the json file is valid html type 
                         all_text, _ = process_html(data['content'])
                         # Apply stemming to all_text
-                        stemmed_text = stem_text(all_text)
-                        self.get_freq(stemmed_text) # count the freq of words 
+                        stemmed_text = stem_text(all_text)  
+                        sumHash = checkSum_Hash(stemmed_text)
 
-                        self.counter.inc_files(len(stemmed_text), data['url']) # incriment based on info of json
+                        if not self.counter.in_checksum(sumHash): # the content is not the same 
+                            self.get_freq(stemmed_text) # count the freq of words 
+                            self.counter.inc_files(len(stemmed_text), data['url'],sumHash) # incriment based on info of json
 
-                        curr_doc_id = self.counter.get_files() # returns the most current docID for parsing
+                            curr_doc_id = self.counter.get_files() # returns the most current docID for parsing
 
-                        self.DocID[curr_doc_id] = data['url'] # add that docID to ur own personal dict 
+                            self.DocID[curr_doc_id] = data['url'] # add that docID to ur own personal dict 
 
-                        # this is my creating DocID dicitonary 
-                        if len(self.DocID) > 3000:
-                            save_docID(self.DocID, self.lock)
-                            self.DocID.clear()
+                            # this is my creating DocID dicitonary 
+                            if len(self.DocID) > 3000:
+                                save_docID(self.DocID, self.lock)
+                                self.DocID.clear()
 
-                        # This is Nick's indexify 
-                        for token in range(len(stemmed_text)):
-                            if stemmed_text[token] not in self.total.keys():
-                                self.total[stemmed_text[token]] = [(curr_doc_id, token+1)] 
-                                # we pass in a tuple, (int, int, int)
-                                # (tf-tdf score, docID , position of that word )
-                            else:
-                                self.total[stemmed_text[token]].append((curr_doc_id, token+1)) # add that url to that token
-                        
-                        # if dictionary is larger than 8000 items push to disk 
-                        if len(self.total) > 8000:
-                            self.total = alpha_sort(self.total)
-                            push_to_disk(self.id, self.total,self.lock)
-                            self.total.clear()
-                            print(f"worker no {self.id} finished loading data, {data['url']} doc id {curr_doc_id}")
+                            # This is Nick's indexify 
+                            for token in range(len(stemmed_text)):
+                                if stemmed_text[token] not in self.total.keys():
+                                    self.total[stemmed_text[token]] = [(curr_doc_id, token+1)] 
+                                    # we pass in a tuple, (int, int, int)
+                                    # (tf-tdf score, docID , position of that word )
+                                else:
+                                    self.total[stemmed_text[token]].append((curr_doc_id, token+1)) # add that url to that token
+                            
+                            # if dictionary is larger than 8000 items push to disk 
+                            if len(self.total) > 8000:
+                                self.total = alpha_sort(self.total)
+                                push_to_disk(self.id, self.total,self.lock)
+                                self.total.clear()
+                                print(f"worker no {self.id} finished loading data, {data['url']} doc id {curr_doc_id}")
 
-                        self.freq_dict.clear() # empty our dict for new set of words 
+                            self.freq_dict.clear() # empty our dict for new set of words 
 
 
         # when worker has no more files just empty out the dictionaries 

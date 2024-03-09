@@ -5,7 +5,7 @@ from datadump import alpha_sort, push_to_disk
 from bs4 import BeautifulSoup
 from helper_funcs import retrieve_word, get_url
 # doc:  https://www.crummy.com/software/BeautifulSoup/bs4/doc/
-
+import math
 import nltk
 from nltk.stem import PorterStemmer
 # doc: https://www.nltk.org/, and class
@@ -15,36 +15,35 @@ from nltk.stem import PorterStemmer
 #as of right now it grabs the important text BUT DOESNT DO ANYTHING WITH it
 #for now its just returning all the text not including the important ones)
 #later we might use the important ones for something
+def find_the_best_docs(tokens_dict): # SCORING AND ORDERING
 
-def find_the_best_docs(tokens_dict):
-    #tokens dict is
-    #{term : { docid : (termfreq , [pos] ) } }
-    returnable = []
-    
-    if len(tokens_dict.keys()) == 1: # sort by frequency if there is just one token
-        onlykey = list(tokens_dict.keys())[0] # makes a key of the only token
-        returnable = sorted(tokens_dict[onlykey], key=lambda x: tokens_dict[onlykey][x][0], reverse=True) #sorts in order of most frequent to least frequent
+    td_to_w = dict()
+# { token : [ (docID, [position, position2, ..., positionx])] }
+    N = 40000 # CHANGE FROM HARDCODE TODO
+    for term in tokens_dict.keys():
+        df_t = len(tokens_dict[term])
+        for docinfo in tokens_dict[term]:
+            docid = docinfo[0]
+            tf_td = len(docinfo[1])
+            w_td = (1 + math.log10(tf_td)) * math.log10(N / df_t) #Equation from lectures
+            td_to_w [(term,docid)] = w_td
+    if len(tokens_dict) == 1:
+        final_rank = sorted(list(td_to_w.keys()), key=lambda x: td_to_w [x], reverse = True)
+        last_web_rank = []
+        for f in final_rank:
+            last_web_rank.append(f[1])
     else:
-        new_tokens_dict = dict()
-        for token in tokens_dict.keys(): #for each key
-            docids = sorted(tokens_dict[token], key=lambda x: tokens_dict[token][x][0], reverse=True) #sorts in order of most frequent to least frequent
-            new_tokens_dict[token] = docids #add the docids
+        combin_weights = dict()
+        for term, docid in td_to_w.keys():
+            if docid in combin_weights:
+                combin_weights [docid] += td_to_w[(term, docid)]
+            else:
+                combin_weights [docid] = td_to_w[(term, docid)]
+        last_web_rank = sorted(list(combin_weights.keys()), key=lambda x: combin_weights [x], reverse = True)
+        #print(combin_weights)
 
 
-        concat_urls = []
-
-        for token in new_tokens_dict.keys(): #compiles all the docids into one list
-            concat_urls += new_tokens_dict[token]
-
-        #sorts based on most docid hits. if they are the same, then the frequency sorting from above takes precedent.
-        concat_urls = sorted(concat_urls, key=lambda x: concat_urls.count(x), reverse=True)
-        # for loop is for unqiue docIDs
-        for docid in concat_urls:
-            if docid not in returnable:
-                returnable.append(docid)
-
-    return returnable
-
+    return last_web_rank
 def validate_query(query):
     # spelling check initialization
     # spell = SpellChecker()
@@ -96,15 +95,5 @@ if __name__ == "__main__":
                 dicts_word = retrieve_word(stem_token)
                 if dicts_word != None:
                     empty_dict[stem_token] = retrieve_word(stem_token)
-                    # print(len(dicts_word))
-            for key, item in empty_dict.items():
-                for tup in empty_dict[key]:
-                    print(tup)
-            # for docID in find_the_best_docs(empty_dict):
-            #     print(get_url(docID))
-
-            # end = time.time()
-            # print((end - start))
-            #         print(get_url(docID))
-            #         for id in list(dicts_word.keys())[0:5]:
-            #             print(get_url(id))
+            for docID in find_the_best_docs(empty_dict)[0:5]:
+                print(get_url(docID))
