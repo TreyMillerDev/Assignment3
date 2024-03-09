@@ -1,6 +1,9 @@
 import os
 import ujson
 import time
+import tkinter as tk
+from tkinter import scrolledtext
+import threading
 from datadump import alpha_sort, push_to_disk
 from bs4 import BeautifulSoup
 from helper_funcs import retrieve_word, get_url
@@ -80,31 +83,43 @@ def validate_query(query):
             
     return refined_tokens
 
-if __name__ == "__main__":
-    while True:
-            user_query = input("Enter your search query (or type exit to quit): ").strip()
-            if user_query.lower() == "exit":
-                break
-            # start = time.time()
-            valid_token = validate_query(user_query)
-# iftekhar ahmed
-            print(f"Valid token: {valid_token}")
-            empty_dict = dict()
-            stemmer = PorterStemmer()
-            for token in valid_token:
-                stem_token = stemmer.stem(token)
-                dicts_word = retrieve_word(stem_token)
-                if dicts_word != None:
-                    empty_dict[stem_token] = retrieve_word(stem_token)
-                    # print(len(dicts_word))
-            for key, item in empty_dict.items():
-                for tup in empty_dict[key]:
-                    print(tup)
-            # for docID in find_the_best_docs(empty_dict):
-            #     print(get_url(docID))
 
-            # end = time.time()
-            # print((end - start))
-            #         print(get_url(docID))
-            #         for id in list(dicts_word.keys())[0:5]:
-            #             print(get_url(id))
+def run_search():
+    user_query = entry.get()
+    valid_token = validate_query(user_query)
+    empty_dict = {}
+    stemmer = PorterStemmer()
+    for token in valid_token:
+        stem_token = stemmer.stem(token)
+        dicts_word = retrieve_word(stem_token)
+        if dicts_word is not None:
+            empty_dict[stem_token] = dicts_word
+
+    result_area.delete('1.0', tk.END)
+    for key, item in empty_dict.items():
+        for tup in item:
+            result_area.insert(tk.END, f"{tup}\n")
+
+
+if __name__ == "__main__":
+    # Tkinter GUI setup
+    root = tk.Tk()
+    root.title("Search Application")
+
+    frame = tk.Frame(root)
+    frame.pack(padx=10, pady=10)
+
+    entry_label = tk.Label(frame, text="Enter your search query:")
+    entry_label.pack()
+
+    entry = tk.Entry(frame, width=50)
+    entry.pack()
+
+    search_button = tk.Button(frame, text="Search", command=lambda: threading.Thread(target=run_search).start())
+    search_button.pack()
+
+    result_area = scrolledtext.ScrolledText(frame, width=60, height=15)
+    result_area.pack()
+
+    root.mainloop()
+                    
