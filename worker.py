@@ -68,7 +68,7 @@ class Worker(Thread):
                         stemmed_text = stem_text(all_text)  
                         sumHash = checkSum_Hash(stemmed_text)
 
-                        if not self.counter.in_checksum(sumHash): # the content is not the same 
+                        if not self.counter.in_checksum(sumHash) or sumHash == (): # the content is not the same or its not giving us a valid hash  
                             self.get_freq(stemmed_text) # count the freq of words 
                             self.counter.inc_files(len(stemmed_text), data['url'],sumHash) # incriment based on info of json
 

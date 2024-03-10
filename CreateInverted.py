@@ -88,15 +88,21 @@ class Create_workers:
 def create_inverted_index():
     start = time.time()
     count = Count()
-    # clear_directory(f'alphaJSON/')
+
+    # create the inverted_index folder 
     if os.path.exists("DocID.pkl"):
         os.remove("DocID.pkl")
     try:
         os.mkdir("Inverted_index")
     except OSError as e:
         print(f"Failed to create folder. Error: {e}")
+
+    # fill the index with infomation 
     working = Create_workers(count)
     working.start()
+    
+    # sort at the end 
+    sort_JSONS_into_pickle()
 
     end = time.time()
     processing_time = (end - start) * 1000

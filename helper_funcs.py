@@ -73,12 +73,12 @@ def sort_JSONS_into_pickle(): #sort pkl files into more managable lists
             with open(f"Inverted_index/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
                 pickle.dump(new_data,fj)
 
-# def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
-#     for letter in alphabet:
-#         with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
-#             data = pickle.load(fp) # the dictionary kinda of nightmare 
-#             with open(f"visuals/{letter}.json", 'w') as fj:
-#                 json.dump(data,fj, indent= 1)
+def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
+    # for letter in alphabet:
+    with open(f"DocID.pkl", 'rb') as fp:
+        data = pickle.load(fp) # the dictionary kinda of nightmare 
+        with open("IDS.json", 'w') as fj:
+            json.dump(data,fj, indent= 1)
 
 def get_url(docID):
     with open(f"DocID.pkl", 'rb') as fp:
@@ -101,9 +101,9 @@ def checkSum_Hash(words_only):
     sums = set()
 
     for word in range(len(words_only)):
-        if (word + 4) < len(words_only): # 0-4, 1-5, 2-6, making sure its in the range 
+        if (word + 5) < len(words_only): # 0-4, 1-5, 2-6, making sure its in the range 
             checksum = 0 # sum the the 4-word-sub
-            N_GRAM = ''.join(words_only[word:word+4])
+            N_GRAM = ''.join(words_only[word:word+5])
             for i in N_GRAM: # iterate through words adding the ASCII values of the char 
                 for let in i:
                     checksum += ord(let)
@@ -192,3 +192,4 @@ def clear_directory(directory):
                 pass
         except Exception as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
+
