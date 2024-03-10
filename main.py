@@ -1,8 +1,10 @@
 import os
 import ujson
 import time
-import tkinter as tk
+#import tkinter as ttk
 from tkinter import scrolledtext
+import tkinter as tk
+from tkinter import ttk  # Import ttk from tkinter
 import threading
 from datadump import alpha_sort, push_to_disk
 from bs4 import BeautifulSoup
@@ -11,6 +13,13 @@ from helper_funcs import retrieve_word, get_url
 
 import nltk
 from nltk.stem import PorterStemmer
+
+dark_background = "#2D2D2D"
+light_text = "#FFFFFF"
+button_color = "#5F5F5F"
+entry_bg = "#3C3C3C"
+entry_fg = "white"
+
 # doc: https://www.nltk.org/, and class
 # from spellchecker import SpellChecker
 
@@ -83,7 +92,7 @@ def validate_query(query):
             
     return refined_tokens
 
-
+#wrapper class for the GUI
 def run_search():
     user_query = entry.get()
     valid_token = validate_query(user_query)
@@ -106,19 +115,31 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("Search Application")
 
-    frame = tk.Frame(root)
+    #init the style
+    style = ttk.Style()
+    style.theme_use('clam')  #use clam
+
+    # color scheme
+    style.configure('TFrame', background='#333333')
+    style.configure('TLabel', background='#333333', foreground='white')
+    style.configure('TEntry', background='#1e1e1e', foreground='white', fieldbackground='#1e1e1e')
+    style.configure('TButton', background='#333333', foreground='white')
+    style.configure('TScrolledText', background='#1e1e1e', foreground='white')
+    
+    #frame it
+    frame = ttk.Frame(root, style='TFrame')
     frame.pack(padx=10, pady=10)
 
-    entry_label = tk.Label(frame, text="Enter your search query:")
+    entry_label = ttk.Label(frame, text="Enter your search query:", style='TLabel')
     entry_label.pack()
 
-    entry = tk.Entry(frame, width=50)
+    entry = ttk.Entry(frame, style='TEntry', width=50)
     entry.pack()
 
-    search_button = tk.Button(frame, text="Search", command=lambda: threading.Thread(target=run_search).start())
+    search_button = ttk.Button(frame, text="Search", command=lambda: threading.Thread(target=run_search).start(), style='TButton')
     search_button.pack()
 
-    result_area = scrolledtext.ScrolledText(frame, width=60, height=15)
+    result_area = scrolledtext.ScrolledText(frame, background='#1e1e1e', foreground='white')
     result_area.pack()
 
     root.mainloop()
