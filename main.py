@@ -11,6 +11,12 @@ from bs4 import BeautifulSoup
 from helper_funcs import retrieve_word, get_url
 # doc:  https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 
+from spellchecker import SpellChecker 
+# pip install pyspellchecker
+
+import wordninja
+import re
+
 import nltk
 from nltk.stem import PorterStemmer
 
@@ -57,40 +63,86 @@ def find_the_best_docs(tokens_dict):
 
     return returnable
 
+# pre-compile for efficiency
+clean_query = re.compile(r"[^\w\s'-]")
+
 def validate_query(query):
-    # spelling check initialization
-    # spell = SpellChecker()
-    # tokenize user input
-    query_tokens = nltk.word_tokenize(query)
-    
-    refined_tokens = []
+    # setup for spellchecker
+    spell = SpellChecker()
+    # clean the query to remove unwanted characters
+    cleaned_query = clean_query.sub('', query)
 
-    for token in query_tokens:
-        # Handle acronyms (fully upper case tokens)
-        if token.isupper():
-            refined_tokens.append(token.lower())
-            continue
-        # check for capitalized tokens
-        # lowercasing capitalized tokens might not be desirable in all cases especially for proper nouns
-        if token[0].isupper():
-            refined_tokens.append(token.lower())
-            continue
+    # if the query is a single word or seems to be a concatenated string
+    if len(cleaned_query.split()) <= 1:
+        # query is all caps so we want to keep it the same -> "COMPUTER"
+        if cleaned_query.isupper(): 
+            return [cleaned_query.lower()]
+        # check if the word is unknown (misspelled or concatenated) -> "computre"
+        elif spell.unknown([cleaned_query]):
+            # Correct the query if it's misspelled "computre" -> "computer"
+            corrected_query = spell.correction(cleaned_query)
+            # if correction is different from the original, then misspell has been resolved
+            if corrected_query and corrected_query.lower() != cleaned_query.lower():
+                return [corrected_query.lower()]
+            # if query is a concatenation of words -> "computerscience"
+            else:
+                # split the words by meaning using wordninja 
+                split_words = wordninja.split(cleaned_query)
+                refined_tokens = []
+
+                for token in split_words:
+                    # Correct each part if it seems misspelled
+                    if  spell.unknown([token]):
+                        corrected_token = spell.correction(token)
+                        refined_tokens.append(corrected_token)
+                    else:
+                        refined_tokens.append(token.lower())
         else:
-            # spelling correction 
-            # corrected = spell.correction(token)
-            refined_tokens.append(token)
-            # now lemmatize term using WordNet
-            # this works for for some inputs that are miss typed but it also affects correct input so this requires more work
-            #synonyms = wordnet.synsets(corrected)
-            #if synonyms:
-            #    # get the most general word
-            #    lemma_names = synonyms[0].lemma_names()
-            #    if lemma_names:
-            #        corrected = lemma_names[0]  # Taking the first synonym as the corrected term
+            # if query does not need any modification return it as is -> "computer"
+            return [cleaned_query.lower()]
+    else:
+        # tokenize each query if its more than two words
+        query_tokens = nltk.word_tokenize(cleaned_query)
+        refined_tokens = []
 
-            # refined_tokens.append(refined_tokens)
-            
-    return refined_tokens
+        for token in query_tokens:
+            # If the token starts with a capital letter, treat it as a proper noun
+            if token[0].isupper():
+                refined_tokens.append(token.lower())
+            else:
+                # Correct misspelled words
+                if spell.unknown([token]):
+                    corrected_token = spell.correction(token)
+                    # Check if corrected_token is None and use the original token as a fallback
+                    corrected_token = corrected_token if corrected_token is not None else token
+                    refined_tokens.append(corrected_token.lower())
+                else:
+                    refined_tokens.append(token.lower())
+                    
+    # limit the number of tokens to 4 for faster search
+    if len(refined_tokens) > 4:
+
+        # hold the highest frequency score for each token
+        token_scores = {}
+
+        for token in refined_tokens:
+            # get the highest score for each token
+            token_data = retrieve_word(token)
+            if token_data:
+                highest_score = max(token_data.items(), key=lambda x: x[1][0])[1][0]
+                token_scores[token] = highest_score
+            else:
+            # assign a default score if the token is not found
+                token_scores[token] = 0
+
+        # Sort tokens by their highest score in descending order
+        sorted_tokens = sorted(refined_tokens, key=lambda token: token_scores.get(token, 0), reverse=True)
+
+        # Limit to the top 4 tokens
+        return sorted_tokens[:4]
+    else:
+        return refined_tokens
+
 
 #wrapper class for the GUI
 def run_search():
@@ -108,6 +160,7 @@ def run_search():
     for key, item in empty_dict.items():
         for tup in item:
             result_area.insert(tk.END, f"{tup}\n")
+
 
 
 if __name__ == "__main__":
