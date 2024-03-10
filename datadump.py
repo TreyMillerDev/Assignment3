@@ -28,7 +28,7 @@ def push_to_disk(id, sorted_dict, lock):
         if key in invalid_key_names:
                 key = invalid_key_names[key]
             
-        file_path = f'alphaJSON/{key}.pkl'
+        file_path = f'Inverted_index/{key}.pkl'
          # CRITICAL SECTION ##########
         try:
                 

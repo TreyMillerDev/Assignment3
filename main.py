@@ -8,7 +8,7 @@ from tkinter import ttk  # Import ttk from tkinter
 import threading
 from datadump import alpha_sort, push_to_disk
 from bs4 import BeautifulSoup
-from helper_funcs import retrieve_word, get_url
+from helper_funcs import retrieve_word, get_url, find_the_best_docs
 # doc:  https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 
 from spellchecker import SpellChecker 
@@ -16,7 +16,6 @@ from spellchecker import SpellChecker
 
 import wordninja
 import re
-
 import nltk
 from nltk.stem import PorterStemmer
 
@@ -34,34 +33,6 @@ entry_fg = "white"
 #for now its just returning all the text not including the important ones)
 #later we might use the important ones for something
 
-def find_the_best_docs(tokens_dict):
-    #tokens dict is
-    #{term : { docid : (termfreq , [pos] ) } }
-    returnable = []
-    
-    if len(tokens_dict.keys()) == 1: # sort by frequency if there is just one token
-        onlykey = list(tokens_dict.keys())[0] # makes a key of the only token
-        returnable = sorted(tokens_dict[onlykey], key=lambda x: tokens_dict[onlykey][x][0], reverse=True) #sorts in order of most frequent to least frequent
-    else:
-        new_tokens_dict = dict()
-        for token in tokens_dict.keys(): #for each key
-            docids = sorted(tokens_dict[token], key=lambda x: tokens_dict[token][x][0], reverse=True) #sorts in order of most frequent to least frequent
-            new_tokens_dict[token] = docids #add the docids
-
-
-        concat_urls = []
-
-        for token in new_tokens_dict.keys(): #compiles all the docids into one list
-            concat_urls += new_tokens_dict[token]
-
-        #sorts based on most docid hits. if they are the same, then the frequency sorting from above takes precedent.
-        concat_urls = sorted(concat_urls, key=lambda x: concat_urls.count(x), reverse=True)
-        # for loop is for unqiue docIDs
-        for docid in concat_urls:
-            if docid not in returnable:
-                returnable.append(docid)
-
-    return returnable
 
 # pre-compile for efficiency
 clean_query = re.compile(r"[^\w\s'-]")
@@ -153,13 +124,19 @@ def run_search():
     for token in valid_token:
         stem_token = stemmer.stem(token)
         dicts_word = retrieve_word(stem_token)
+        
         if dicts_word is not None:
             empty_dict[stem_token] = dicts_word
 
+    web_ranks = find_the_best_docs(empty_dict)
+
     result_area.delete('1.0', tk.END)
-    for key, item in empty_dict.items():
-        for tup in item:
-            result_area.insert(tk.END, f"{tup}\n")
+    result_area.insert(tk.END, "Top Results For Query : \n")
+    result_area.insert(tk.END, "---------------------- \n\n")
+    for number, item in enumerate(web_ranks):
+        result_area.insert(tk.END, number + 1)
+        result_area.insert(tk.END, ") ")
+        result_area.insert(tk.END, f"{get_url(item)}\n\n")
 
 
 

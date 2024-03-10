@@ -13,37 +13,50 @@ from nltk.stem import PorterStemmer
 
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
-def find_the_best_docs(tokens_dict):
+def get_num_files():
+    with open(f"DocID.pkl", 'rb') as fp:
+        data = pickle.load(fp) # the di
+        return len(data)
 
-    #tokens dict is
-    #{term : { docid : (termfreq , [pos] ) } }
-    returnable = []
-    if len(tokens_dict.keys()) == 1: # sort by frequency if there is just one token
-        onlykey = list(tokens_dict.keys())[0] # makes a key of the only token
-        returnable = sorted(tokens_dict[onlykey], key=lambda x: tokens_dict[onlykey][x][0], reverse=True) #sorts in order of most frequent to least frequent
-    else:
+def find_the_best_docs(tokens_dict): # SCORING AND ORDERING
 
-        new_tokens_dict = dict()
-        for token in tokens_dict.keys(): #for each key
-            docids = sorted(tokens_dict[token], key=lambda x: tokens_dict[token][x][0], reverse=True) #sorts in order of most frequent to least frequent
-            new_tokens_dict[token] = docids #add the docids
-        concat_urls = []
-        for token in new_tokens_dict.keys(): #compiles all the docids into one list
-            concat_urls += new_tokens_dict[token]
+    #print(f"tokens dict is {tokens_dict}, {len(tokens_dict)}")
 
-        #sorts based on most docid hits. if they are the same, then the frequency sorting from above takes precedent.
-        concat_urls = sorted(concat_urls, key=lambda x: concat_urls.count(x), reverse=True)
-        for docid in concat_urls:
-            if docid not in returnable:
-                returnable.append(docid)
+    td_to_w = dict()
 
-    return returnable
+    #{ token : [ (docID, [position, position2, ..., positionx])] }
+
+    
+    N = get_num_files() # CHANGE FROM HARDCODE TODO
+
+    used_docids = set()
+
+    for term in tokens_dict.keys():
+
+        df_t = len(tokens_dict[term])
+
+        for docinfo in tokens_dict[term]:
+
+            docid = docinfo[0]
+            tf_td = len(docinfo[1])
+
+            w_td = (1 + math.log10(tf_td)) * math.log10(N / df_t) #Equation from lectures
+
+            if docid in used_docids:
+                td_to_w [docid] += w_td
+            else:
+                td_to_w [docid] = w_td
+                used_docids.add(docid)
+
+    final_rank = sorted(list(td_to_w.keys()), key=lambda x: td_to_w [x], reverse = True)
+
+    return final_rank
 
 def sort_JSONS_into_pickle(): #sort pkl files into more managable lists 
     for letter in alphabet:
         replacement_dict = dict()
 
-        with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
+        with open(f"Inverted_index/{letter}.pkl", 'rb') as fp:
             data = pickle.load(fp) # that speicifc letter.json file 
 
             # token : [ (freq, docID, position), (freq, docID, position2)] will become underneath
@@ -67,15 +80,15 @@ def sort_JSONS_into_pickle(): #sort pkl files into more managable lists
                 new_data[token] = new_list_tups
                 
 
-            with open(f"sortedJSON/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
+            with open(f"Inverted_index/{letter}.pkl", 'wb') as fj: # rewrite the file with the new information 
                 pickle.dump(new_data,fj)
 
-def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
-    for letter in alphabet:
-        with open(f"alphaJSON/{letter}.pkl", 'rb') as fp:
-            data = pickle.load(fp) # the dictionary kinda of nightmare 
-            with open(f"visuals/{letter}.json", 'w') as fj:
-                json.dump(data,fj, indent= 1)
+# def visualize_into_jsons(): # conver thte pkls into visual json file MUST CREATE DIRECTORY: visuals
+#     for letter in alphabet:
+#         with open(f"inverted_index/{letter}.pkl", 'rb') as fp:
+#             data = pickle.load(fp) # the dictionary kinda of nightmare 
+#             with open(f"visuals/{letter}.json", 'w') as fj:
+#                 json.dump(data,fj, indent= 1)
 
 def get_url(docID):
     with open(f"DocID.pkl", 'rb') as fp:
@@ -96,7 +109,7 @@ def find_file(url, directory): # given url and directory find thtat speicifc jso
 
 def retrieve_word(word):
     letter = word[0] # gets the first letter 
-    with open(f"sortedJSON/{letter}.pkl", 'rb') as fp:
+    with open(f"Inverted_index/{letter}.pkl", 'rb') as fp:
             data = pickle.load(fp) # the dictionary kinda of nightmare 
     if word in data.keys():
         return data[word] # assume word is in the data file 
@@ -172,3 +185,19 @@ def clear_directory(directory):
                 pass
         except Exception as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
+
+def checkSum_Hash(words_only):
+    sums = set()
+
+    for word in range(len(words_only)):
+        if (word + 5) < len(words_only): # 0-4, 1-5, 2-6, making sure its in the range 
+            checksum = 0 # sum the the 4-word-sub
+            N_GRAM = ''.join(words_only[word:word+5])
+            for i in N_GRAM: # iterate through words adding the ASCII values of the char 
+                for let in i:
+                    checksum += ord(let)
+
+            sums.add(checksum)
+            checksum = 0
+
+    return tuple(set([num for num in sums if num % 15 == 0]))

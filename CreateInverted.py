@@ -108,7 +108,3 @@ def create_inverted_index():
     processing_time = (end - start) * 1000
     print(f"Processing time: {processing_time:.03f}ms")
 
-
-create_inverted_index()
-
-    
